@@ -430,6 +430,7 @@
     "react-diff-viewer-continued": {
       "js-yaml": "^4.3.1"
     },
+    "smol-toml": "^1.8.0",
     "tar": "^7.5.16",
     "typescript-json-schema": "^0.68.0",
     "underscore": "^1.13.7",
