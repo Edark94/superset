@@ -1236,9 +1236,14 @@ class SQLStatement(BaseSQLStatement[exp.Expression]):
             if self._parsed.find(node_type):
                 return True
 
-        # Handle ALTER parsed as Command (Oracle, MS SQL dialects)
-        if isinstance(self._parsed, exp.Command) and self._parsed.name == "ALTER":
-            return True  # pragma: no cover
+        # Handle ALTER parsed as Command (Oracle, MS SQL dialects). The `.name`
+        # attribute preserves the source-case of the head keyword, so the
+        # comparison must be case-insensitive.
+        if (
+            isinstance(self._parsed, exp.Command)
+            and self._parsed.name.upper() == "ALTER"
+        ):
+            return True
 
         return False
 
