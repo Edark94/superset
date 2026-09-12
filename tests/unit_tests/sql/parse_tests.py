@@ -2298,28 +2298,41 @@ def test_check_functions_present_session_parameter(
 
 
 @pytest.mark.parametrize(
-    "sql, expected",
+    "sql, engine, expected",
     [
-        ("SELECT 1", False),
-        ("INSERT INTO t VALUES (1)", False),
-        ("UPDATE t SET x = 1", False),
-        ("DELETE FROM t", False),
-        ("MERGE INTO t USING s ON t.id = s.id WHEN MATCHED THEN DELETE", False),
-        ("CREATE TABLE t (id INT)", False),
-        ("DROP TABLE t", True),
-        ("DROP TABLE IF EXISTS t", True),
-        ("DROP VIEW v", True),
-        ("TRUNCATE TABLE t", True),
-        ("ALTER TABLE t ADD COLUMN x INT", True),
-        ("ALTER TABLE t DROP COLUMN x", True),
+        ("SELECT 1", "postgresql", False),
+        ("INSERT INTO t VALUES (1)", "postgresql", False),
+        ("UPDATE t SET x = 1", "postgresql", False),
+        ("DELETE FROM t", "postgresql", False),
+        (
+            "MERGE INTO t USING s ON t.id = s.id WHEN MATCHED THEN DELETE",
+            "postgresql",
+            False,
+        ),
+        ("CREATE TABLE t (id INT)", "postgresql", False),
+        ("DROP TABLE t", "postgresql", True),
+        ("DROP TABLE IF EXISTS t", "postgresql", True),
+        ("DROP VIEW v", "postgresql", True),
+        ("TRUNCATE TABLE t", "postgresql", True),
+        ("ALTER TABLE t ADD COLUMN x INT", "postgresql", True),
+        ("ALTER TABLE t DROP COLUMN x", "postgresql", True),
+        ("alter table t add column x int", "postgresql", True),
+        # ALTER statements sqlglot has no structured node for fall back to
+        # `exp.Command`, whose name preserves the source case of the keyword
+        ("ALTER SESSION SET x = 1", "postgresql", True),
+        ("alter session set x = 1", "postgresql", True),
+        ("Alter Role r SET search_path = s", "postgresql", True),
+        ("alter session set nls_date_format = 'YYYY'", "oracle", True),
+        ("alter database d set recovery simple", "mssql", True),
     ],
 )
-def test_is_destructive(sql: str, expected: bool) -> None:
+def test_is_destructive(sql: str, engine: str, expected: bool) -> None:
     """
     Test that ``is_destructive`` detects DROP, TRUNCATE, and ALTER
     but not SELECT, INSERT, UPDATE, DELETE, MERGE, or CREATE.
     """
-    assert SQLStatement(sql, "postgresql").is_destructive() == expected
+    assert SQLStatement(sql, engine).is_destructive() == expected
+    assert SQLScript(sql, engine).has_destructive() == expected
 
 
 @pytest.mark.parametrize(
@@ -2329,6 +2342,7 @@ def test_is_destructive(sql: str, expected: bool) -> None:
         ("SELECT 1; DROP TABLE t", True),
         ("SELECT 1; TRUNCATE TABLE t", True),
         ("CREATE TABLE t (id INT); ALTER TABLE t ADD COLUMN x INT", True),
+        ("SELECT 1; alter session set x = 1", True),
     ],
 )
 def test_has_destructive(sql: str, expected: bool) -> None:
