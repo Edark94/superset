@@ -31,6 +31,7 @@ from superset.sql.parse import (
     _count_weighted_table_references,
     _find_last_token_node,
     _get_select_trailing_child,
+    _SELECT_TRAILING_CLAUSES,
     BaseSQLStatement,
     count_referenced_tables,
     CTASMethod,
@@ -1435,6 +1436,25 @@ def test_find_last_token_node_branches() -> None:
     # 5. Leaf node with no children returns itself
     lit = exp.Literal.number(42)
     assert _find_last_token_node(lit) is lit
+
+
+def test_select_trailing_clauses_match_sqlglot_arg_names() -> None:
+    """
+    Every clause name must be a real `exp.Select` argument, otherwise the entry
+    is silently skipped and the comment lands in an earlier clause.
+    """
+    assert set(_SELECT_TRAILING_CLAUSES) <= set(exp.Select.arg_types)
+
+
+def test_trailing_comment_after_from_without_later_clauses() -> None:
+    """
+    A trailing comment on `SELECT ... FROM t` should follow the table, not be
+    moved into the projection list.
+    """
+    formatted = SQLScript("SELECT a, b FROM t;\n-- trailing", "postgresql").format()
+
+    assert formatted.endswith("FROM t /* trailing */")
+    assert "/* trailing */" not in formatted[: formatted.index("FROM")]
 
 
 @pytest.mark.parametrize(

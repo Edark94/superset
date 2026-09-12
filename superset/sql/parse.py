@@ -753,7 +753,7 @@ _SELECT_TRAILING_CLAUSES: tuple[str, ...] = (
     "where",
     "joins",
     "laterals",
-    "from",
+    "from_",
     "into",
     "expressions",
 )
