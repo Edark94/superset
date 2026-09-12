@@ -2578,6 +2578,29 @@ PARTITION_MACRO_NAMES = (
 )
 
 
+def _partition_macro_table(node: nodes.Call) -> Table:
+    """
+    Statically resolve the table referenced by a partition macro call.
+
+    :param node: The Jinja ``Call`` node of the partition macro
+    :returns: The referenced table
+    :raises nodes.Impossible: If the argument is not a single constant string
+        denoting a 1- to 3-part table reference with no empty segments
+    """
+    if len(node.args) != 1:
+        raise nodes.Impossible()
+    value = node.args[0].as_const()
+    if not isinstance(value, str):
+        raise nodes.Impossible()
+    parts = [part.strip() for part in value.split(".")]
+    if not 1 <= len(parts) <= 3 or any(not part for part in parts):
+        raise nodes.Impossible()
+    parts = [remove_quotes(part) for part in parts]
+    if any(not part for part in parts):
+        raise nodes.Impossible()
+    return Table(*parts[::-1])
+
+
 def process_jinja_sql(
     sql: str, database: Database, template_params: Optional[dict[str, Any]] = None
 ) -> JinjaSQLResult:
@@ -2630,16 +2653,7 @@ def process_jinja_sql(
             # Extract the table referenced in the macro. The reference must
             # be statically evaluable; otherwise raise rather than render.
             try:
-                if len(node.args) != 1:
-                    raise nodes.Impossible()
-                tables.add(
-                    Table(
-                        *[
-                            remove_quotes(part.strip())
-                            for part in node.args[0].as_const().split(".")[::-1]
-                        ]
-                    )
-                )
+                tables.add(_partition_macro_table(node))
             except nodes.Impossible:
                 raise_for_unresolvable_macro()
 

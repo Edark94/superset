@@ -5032,6 +5032,13 @@ def test_extract_tables_from_jinja_sql(
         # A partition macro with the wrong number of arguments cannot be
         # resolved to a single table, so it must also fail closed.
         "latest_partition('foo.bar', 'extra')",
+        # A constant that does not denote a valid table reference must raise
+        # the structured parse error rather than leak a Python exception.
+        "latest_partition('a.b.c.d')",
+        "latest_partition(123)",
+        "latest_partition('foo..bar')",
+        "latest_partition('foo.\"\"')",
+        "latest_partition('')",
     ],
 )
 def test_extract_tables_from_jinja_sql_fails_closed(
