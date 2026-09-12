@@ -35,6 +35,8 @@ round-trip sends malformed or semantically wrong SQL to the database.
 
 from __future__ import annotations
 
+from collections.abc import Callable
+
 from sqlglot import exp
 from sqlglot.dialects.starrocks import StarRocks as _StarRocks
 from sqlglot.errors import ParseError
@@ -78,6 +80,10 @@ _STARROCKS_AGGREGATE_COLUMN_CONSTRAINTS = (
     "BITMAP_UNION",
     "HLL_UNION",
 )
+
+
+def _var_constraint_parser(keyword: str) -> Callable[[_StarRocksParser], exp.Var]:
+    return lambda self: exp.var(keyword)
 
 
 class StarRocksMaterializedViewRefresh(exp.Refresh):
@@ -129,7 +135,7 @@ class StarRocksParser(_StarRocksParser):
     CONSTRAINT_PARSERS = {
         **_StarRocksParser.CONSTRAINT_PARSERS,
         **{
-            keyword: (lambda keyword: lambda self: exp.var(keyword))(keyword)
+            keyword: _var_constraint_parser(keyword)
             for keyword in _STARROCKS_AGGREGATE_COLUMN_CONSTRAINTS
         },
         # Overrides MySQL's "KEY" (always a named inline secondary index) to
