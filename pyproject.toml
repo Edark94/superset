@@ -94,7 +94,7 @@ dependencies = [
     "parsedatetime",
     "paramiko>=3.4.0, <4.0", # 4.0 removed DSSKey, still referenced by sshtunnel
     "pgsanity",
-    "Pillow>=12.3.0, <13", # raise floor to match resolved pin; closes SCA false-positive on 11.x-range CVEs already fixed in 12.3.0
+    "Pillow>=12.3.0, <14", # raise floor to match resolved pin; closes SCA false-positive on 11.x-range CVEs already fixed in 12.3.0
     "polyline>=2.0.4, <3.0",
     "pydantic>=2.13.5",
     "pyparsing>=3.3.2, <4",
